@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Fight Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body,html{overflow:hidden;font-family:Arial;background:#000;}
+
+#home,#game{width:100vw;height:100vh;display:none;position:relative;}
+
+#home{
+  background:linear-gradient(160deg,#0a0010,#1a0030,#0d0020);
+  color:white;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:20px;
+}
+#home h1{
+  font-size:3rem;font-weight:900;letter-spacing:6px;
+  background:linear-gradient(90deg,#ff4444,#ff9900,#ff4444);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  text-shadow:none;
+}
+
+.charSelect{
+  display:flex;gap:30px;
+}
+.charCard{
+  width:130px;height:180px;
+  border:2px solid #444;border-radius:10px;
+  background:rgba(255,255,255,0.05);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  cursor:pointer;transition:all 0.2s;
+  padding:10px;gap:8px;
+}
+.charCard:hover{border-color:#ff9900;background:rgba(255,153,0,0.1);}
+.charCard.selected{border-color:#ff9900;box-shadow:0 0 20px #ff9900aa;}
+.charCard span{color:#ccc;font-size:12px;font-weight:bold;letter-spacing:1px;}
+
+#playBtn{
+  padding:14px 40px;font-size:1.1rem;font-weight:bold;letter-spacing:2px;
+  background:linear-gradient(90deg,#ff4444,#ff9900);
+  border:none;color:white;border-radius:6px;cursor:pointer;
+  transition:transform 0.1s;
+}
+#playBtn:hover{transform:scale(1.05);}
+
+/* GAME */
+#game{
+  background:linear-gradient(180deg,#1a0830 0%,#2d1060 40%,#0a0020 100%);
+  position:relative;overflow:hidden;
+}
+
+/* Floor */
+#floor{
+  position:absolute;bottom:0;left:0;right:0;height:80px;
+  background:linear-gradient(180deg,#1a0060,#0a0030);
+  border-top:2px solid #5533aa;
+}
+#floorGlow{
+  position:absolute;bottom:78px;left:0;right:0;height:6px;
+  background:radial-gradient(ellipse at center,#aa44ff88,transparent);
+}
+
+/* Background pillars */
+.pillar{
+  position:absolute;bottom:80px;
+  width:40px;
+  background:linear-gradient(180deg,#2a0060,#180040);
+  border-left:1px solid #5533aa44;
+  border-right:1px solid #5533aa44;
+}
+
+/* HUD */
+#hud{
+  position:absolute;top:15px;left:0;right:0;
+  display:flex;align-items:center;justify-content:center;gap:15px;
+  z-index:100;
+}
+.hpWrap{width:280px;}
+.hpLabel{font-size:11px;color:#ffcc00;font-weight:bold;letter-spacing:2px;margin-bottom:3px;}
+#hpLabel1{text-align:left;}
+#hpLabel2{text-align:right;}
+.hpBg{height:18px;background:#1a1a2e;border:1px solid #5533aa;border-radius:3px;overflow:hidden;}
+#hp1bar{height:100%;background:linear-gradient(90deg,#ff4444,#ff8800);transition:width 0.3s;border-radius:3px;}
+#hp2bar{height:100%;background:linear-gradient(270deg,#ff4444,#ff8800);transition:width 0.3s;border-radius:3px;margin-left:auto;}
+.hpBg2{display:flex;justify-content:flex-end;}
+
+#vsText{
+  color:#ffcc00;font-size:1.4rem;font-weight:900;
+  text-shadow:0 0 10px #ffcc00;letter-spacing:2px;
+}
+#levelBadge{
+  position:absolute;top:70px;left:50%;transform:translateX(-50%);
+  color:#aa88ff;font-size:12px;letter-spacing:3px;
+}
+
+/* Characters */
+.fighter{
+  position:absolute;bottom:80px;
+  width:100px;height:160px;
+  z-index:20;
+  transition:left 0.18s ease, right 0.18s ease;
+}
+#f1{left:80px;}
+#f2{right:80px;}
+
+/* MENU */
+#menu{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  background:rgba(0,0,0,0.92);
+  border:2px solid #ff9900;
+  padding:24px 32px;color:white;
+  display:none;text-align:center;
+  border-radius:12px;z-index:200;
+  box-shadow:0 0 40px #ff990066;
+}
+#menu h2{font-size:1.5rem;color:#ff9900;margin-bottom:12px;}
+#menu button{
+  background:linear-gradient(90deg,#ff4444,#ff9900);
+  border:none;color:white;padding:8px 16px;
+  margin:4px;border-radius:5px;cursor:pointer;font-weight:bold;
+}
+
+#jumpUI{
+  position:absolute;right:12px;top:100px;
+  background:rgba(0,0,0,0.6);padding:8px;
+  border-radius:8px;color:#aaa;font-size:11px;
+  z-index:100;
+}
+#jumpUI button{
+  display:block;width:100%;
+  background:#333;border:1px solid #555;
+  color:white;padding:4px 10px;margin:3px 0;
+  border-radius:4px;cursor:pointer;font-size:11px;
+}
+
+#flash{
+  position:absolute;inset:0;
+  background:white;opacity:0;pointer-events:none;z-index:50;
+}
+
+/* HIT TEXT */
+#hitText{
+  position:absolute;top:40%;left:50%;
+  transform:translate(-50%,-50%);
+  font-size:2.5rem;font-weight:900;
+  color:#ff4444;text-shadow:0 0 20px #ff4444;
+  opacity:0;z-index:150;pointer-events:none;
+  letter-spacing:4px;
+}
+
+/* ================================
+   SVG CHARACTER ANIMATIONS
+================================ */
+
+/* IDLE BOB */
+@keyframes idleBob{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-4px);}
+}
+/* ATTACK PUNCH */
+@keyframes punch{
+  0%{transform:translateY(0);}
+  30%{transform:translateX(18px) translateY(-2px);}
+  60%{transform:translateX(28px) translateY(-4px);}
+  100%{transform:translateY(0);}
+}
+/* HURT */
+@keyframes hurt{
+  0%,100%{transform:translateX(0);}
+  25%{transform:translateX(-12px);}
+  75%{transform:translateX(8px);}
+}
+/* KICK */
+@keyframes kick{
+  0%{transform:translateY(0);}
+  40%{transform:translateY(-10px) translateX(10px);}
+  70%{transform:translateY(-5px) translateX(20px);}
+  100%{transform:translateY(0);}
+}
+/* WIN */
+@keyframes win{
+  0%,100%{transform:translateY(0);}
+  25%{transform:translateY(-20px);}
+  50%{transform:translateY(0);}
+  75%{transform:translateY(-10px);}
+}
+/* LOSE */
+@keyframes lose{
+  0%{transform:translateY(0) rotate(0);}
+  100%{transform:translateY(10px) rotate(-30deg);}
+}
+
+.idle{ animation:idleBob 1.2s ease-in-out infinite; }
+.punching{ animation:punch 0.35s ease forwards; }
+.kicking{ animation:kick 0.4s ease forwards; }
+.hurting{ animation:hurt 0.3s ease forwards; }
+.winning{ animation:win 0.7s ease infinite; }
+.losing{ animation:lose 0.5s ease forwards; }
+
+/* Arm swing animations inside SVG */
+@keyframes armSwingL{
+  0%,100%{transform-origin:50% 0%;transform:rotate(-15deg);}
+  50%{transform-origin:50% 0%;transform:rotate(25deg);}
+}
+@keyframes armSwingR{
+  0%,100%{transform-origin:50% 0%;transform:rotate(15deg);}
+  50%{transform-origin:50% 0%;transform:rotate(-25deg);}
+}
+@keyframes legSwingL{
+  0%,100%{transform-origin:50% 0%;transform:rotate(-10deg);}
+  50%{transform-origin:50% 0%;transform:rotate(15deg);}
+}
+@keyframes legSwingR{
+  0%,100%{transform-origin:50% 0%;transform:rotate(10deg);}
+  50%{transform-origin:50% 0%;transform:rotate(-15deg);}
+}
+@keyframes punchArm{
+  0%{transform-origin:50% 0%;transform:rotate(-15deg);}
+  50%{transform-origin:50% 0%;transform:rotate(-60deg) translateX(10px);}
+  100%{transform-origin:50% 0%;transform:rotate(-15deg);}
+}
+@keyframes kickLeg{
+  0%{transform-origin:50% 0%;transform:rotate(0deg);}
+  40%{transform-origin:50% 0%;transform:rotate(-70deg);}
+  100%{transform-origin:50% 0%;transform:rotate(0deg);}
+}
+
+.arm-idle-l{animation:armSwingL 1.2s ease-in-out infinite;}
+.arm-idle-r{animation:armSwingR 1.2s ease-in-out infinite;}
+.leg-idle-l{animation:legSwingL 1.2s ease-in-out infinite;}
+.leg-idle-r{animation:legSwingR 1.2s ease-in-out infinite;}
+.arm-punch{animation:punchArm 0.35s ease forwards;}
+.leg-kick{animation:kickLeg 0.4s ease forwards;}
+
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="home">
+  <h1>FIGHT!</h1>
+  <p style="color:#888;letter-spacing:3px;font-size:12px;">CHOOSE YOUR WARRIOR</p>
+
+  <div class="charSelect">
+    <div class="charCard" onclick="selectChar(this,'warrior')" id="sc1">
+      <svg width="80" height="110" viewBox="0 0 80 110">
+        <!-- Warrior preview -->
+        <ellipse cx="40" cy="18" rx="14" ry="15" fill="#f4a261"/>
+        <rect x="26" y="32" width="28" height="35" rx="4" fill="#1565c0"/>
+        <rect x="16" y="34" width="11" height="28" rx="4" fill="#f4a261"/>
+        <rect x="53" y="34" width="11" height="28" rx="4" fill="#f4a261"/>
+        <rect x="26" y="65" width="12" height="30" rx="4" fill="#0d47a1"/>
+        <rect x="42" y="65" width="12" height="30" rx="4" fill="#0d47a1"/>
+        <rect x="7" y="56" width="14" height="8" rx="3" fill="#e65100"/>
+        <rect x="59" y="56" width="14" height="8" rx="3" fill="#e65100"/>
+        <ellipse cx="35" cy="17" rx="3" ry="3" fill="#333"/>
+        <ellipse cx="45" cy="17" rx="3" ry="3" fill="#333"/>
+        <rect x="28" y="24" rx="2" width="24" height="5" fill="#8d4a00"/>
+      </svg>
+      <span>WARRIOR</span>
+    </div>
+
+    <div class="charCard" onclick="selectChar(this,'ninja')" id="sc2">
+      <svg width="80" height="110" viewBox="0 0 80 110">
+        <!-- Ninja preview -->
+        <ellipse cx="40" cy="18" rx="14" ry="15" fill="#f4a261"/>
+        <rect x="26" y="3" width="28" height="18" rx="4" fill="#c62828"/>
+        <rect x="26" y="14" width="28" height="6" rx="2" fill="#000"/>
+        <rect x="26" y="32" width="28" height="35" rx="4" fill="#b71c1c"/>
+        <rect x="16" y="34" width="11" height="28" rx="4" fill="#f4a261"/>
+        <rect x="53" y="34" width="11" height="28" rx="4" fill="#f4a261"/>
+        <rect x="26" y="65" width="12" height="30" rx="4" fill="#880e0e"/>
+        <rect x="42" y="65" width="12" height="30" rx="4" fill="#880e0e"/>
+        <rect x="5" y="53" width="16" height="7" rx="3" fill="#555"/>
+        <rect x="59" y="53" width="16" height="7" rx="3" fill="#555"/>
+        <ellipse cx="35" cy="18" rx="3" ry="3" fill="#111"/>
+        <ellipse cx="45" cy="18" rx="3" ry="3" fill="#111"/>
+      </svg>
+      <span>NINJA</span>
+    </div>
+  </div>
+
+  <button id="playBtn" onclick="startGame()">▶ PLAY</button>
+</div>
+
+<!-- GAME -->
+<div id="game">
+
+  <!-- Decorative pillars -->
+  <div class="pillar" style="left:5%;height:220px;"></div>
+  <div class="pillar" style="left:18%;height:160px;"></div>
+  <div class="pillar" style="right:5%;height:220px;"></div>
+  <div class="pillar" style="right:18%;height:160px;"></div>
+
+  <div id="floorGlow"></div>
+  <div id="floor"></div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hpWrap">
+      <div class="hpLabel" id="hpLabel1">YOU</div>
+      <div class="hpBg"><div id="hp1bar" style="width:100%;"></div></div>
+    </div>
+    <div id="vsText">VS</div>
+    <div class="hpWrap">
+      <div class="hpLabel" id="hpLabel2" style="text-align:right;">ENEMY</div>
+      <div class="hpBg hpBg2"><div id="hp2bar" style="width:100%;"></div></div>
+    </div>
+  </div>
+  <div id="levelBadge">LEVEL 1</div>
+
+  <div id="flash"></div>
+  <div id="hitText">HIT!</div>
+
+  <!-- Fighter 1 -->
+  <div class="fighter idle" id="f1">
+    <svg id="svg1" width="100" height="160" viewBox="0 0 100 160"></svg>
+  </div>
+
+  <!-- Fighter 2 (mirrored) -->
+  <div class="fighter idle" id="f2" style="transform:scaleX(-1);">
+    <svg id="svg2" width="100" height="160" viewBox="0 0 100 160"></svg>
+  </div>
+
+  <!-- Jump UI -->
+  <div id="jumpUI">
+    <div style="color:#ffcc00;font-weight:bold;margin-bottom:4px;">JUMP</div>
+    <button onclick="event.stopPropagation();jumpLevel(10)">Lv 10</button>
+    <button onclick="event.stopPropagation();jumpLevel(20)">Lv 20</button>
+    <button onclick="event.stopPropagation();jumpLevel(50)">Lv 50</button>
+  </div>
+
+  <!-- Menu -->
+  <div id="menu">
+    <h2 id="menuTitle">STAGE CLEAR! 🎉</h2>
+    <div style="margin:10px 0;">
+      <button onclick="nextLevel()">NEXT LEVEL</button>
+      <button onclick="resetGame()">RESTART</button>
+      <button onclick="goHome()">HOME</button>
+    </div>
+    <hr style="border-color:#444;margin:10px 0;">
+    <div style="color:#aaa;font-size:11px;margin-bottom:6px;">JUMP TO LEVEL</div>
+    <button onclick="jumpLevel(10)">10</button>
+    <button onclick="jumpLevel(20)">20</button>
+    <button onclick="jumpLevel(50)">50</button>
+  </div>
+
+</div>
+
+<script>
+// =====================
+//  CHARACTER SVG DRAW
+// =====================
+function drawWarrior(svgEl, shadow){
+  const col = shadow ? 'rgba(0,0,0,0.35)' : null;
+  const skin = col||'#f4a261', bodyC = col||'#1565c0', legC = col||'#0d47a1';
+  const armC = col||'#f4a261', bootC = col||'#e65100', hairC = col||'#4a2000';
+  const beltC = col||'#fdd835', eyeC = col||'#111';
+  svgEl.innerHTML = `
+  <g ${shadow?'transform="translate(5,8) skewX(20) scale(1,0.35)" opacity="0.4"':''}>
+    <!-- Shadow ground ellipse or full body -->
+    ${shadow ? `<ellipse cx="50" cy="150" rx="38" ry="10" fill="#000" opacity="0.5"/>` : `
+    <!-- Belt -->
+    <rect x="30" y="88" width="40" height="7" rx="2" fill="${beltC}"/>
+    <!-- Body -->
+    <rect x="30" y="52" width="40" height="42" rx="5" fill="${bodyC}"/>
+    <!-- Neck -->
+    <rect x="44" y="44" width="12" height="12" rx="2" fill="${skin}"/>
+    <!-- Head -->
+    <ellipse cx="50" cy="32" rx="18" ry="19" fill="${skin}"/>
+    <!-- Hair -->
+    <ellipse cx="50" cy="17" rx="17" ry="9" fill="${hairC}"/>
+    <!-- Eyes -->
+    <ellipse cx="43" cy="30" rx="3.5" ry="4" fill="${eyeC}"/>
+    <ellipse cx="57" cy="30" rx="3.5" ry="4" fill="${eyeC}"/>
+    <!-- Eye shine -->
+    <ellipse cx="44.5" cy="28.5" rx="1.2" ry="1.5" fill="white"/>
+    <ellipse cx="58.5" cy="28.5" rx="1.2" ry="1.5" fill="white"/>
+    <!-- Nose -->
+    <ellipse cx="50" cy="35" rx="2" ry="1.5" fill="#c97a3a"/>
+    <!-- Mouth -->
+    <path d="M44 40 Q50 44 56 40" stroke="#8b4513" stroke-width="1.5" fill="none"/>
+    <!-- Left Arm -->
+    <g class="arm-idle-l" id="arm1L">
+      <rect x="13" y="55" width="17" height="38" rx="7" fill="${armC}"/>
+      <!-- Glove -->
+      <rect x="10" y="87" width="20" height="12" rx="5" fill="${bootC}"/>
+    </g>
+    <!-- Right Arm -->
+    <g class="arm-idle-r" id="arm1R">
+      <rect x="70" y="55" width="17" height="38" rx="7" fill="${armC}"/>
+      <rect x="70" y="87" width="20" height="12" rx="5" fill="${bootC}"/>
+    </g>
+    <!-- Left Leg -->
+    <g class="leg-idle-l">
+      <rect x="30" y="92" width="17" height="42" rx="6" fill="${legC}"/>
+      <rect x="27" y="126" width="22" height="12" rx="5" fill="${bootC}"/>
+    </g>
+    <!-- Right Leg -->
+    <g class="leg-idle-r">
+      <rect x="53" y="92" width="17" height="42" rx="6" fill="${legC}"/>
+      <rect x="51" y="126" width="22" height="12" rx="5" fill="${bootC}"/>
+    </g>
+    `}
+  </g>`;
+}
+
+function drawNinja(svgEl, shadow){
+  const col = shadow ? 'rgba(0,0,0,0.35)' : null;
+  const skin=col||'#f4a261', bodyC=col||'#b71c1c', legC=col||'#880e0e';
+  const maskC=col||'#c62828', bandC=col||'#111', bootC=col||'#555';
+  const eyeC=col||'#cc0000', scarfC=col||'#ff1744';
+  svgEl.innerHTML = `
+  <g ${shadow?'transform="translate(5,8) skewX(20) scale(1,0.35)" opacity="0.4"':''}>
+    ${shadow ? `<ellipse cx="50" cy="150" rx="38" ry="10" fill="#000" opacity="0.5"/>` : `
+    <!-- Body -->
+    <rect x="30" y="52" width="40" height="42" rx="5" fill="${bodyC}"/>
+    <!-- Sash -->
+    <rect x="44" y="52" width="12" height="42" fill="${maskC}" opacity="0.5"/>
+    <!-- Neck -->
+    <rect x="44" y="44" width="12" height="12" rx="2" fill="${skin}"/>
+    <!-- Head -->
+    <ellipse cx="50" cy="32" rx="18" ry="19" fill="${skin}"/>
+    <!-- Mask top -->
+    <ellipse cx="50" cy="17" rx="17" ry="10" fill="${maskC}"/>
+    <!-- Eye band -->
+    <rect x="32" y="26" width="36" height="9" rx="4" fill="${bandC}"/>
+    <!-- Eye slits -->
+    <rect x="37" y="28" rx="3" width="10" height="5" fill="${eyeC}"/>
+    <rect x="53" y="28" rx="3" width="10" height="5" fill="${eyeC}"/>
+    <!-- Scarf -->
+    <rect x="34" y="40" width="32" height="7" rx="3" fill="${scarfC}"/>
+    <rect x="30" y="45" width="14" height="20" rx="4" fill="${scarfC}" opacity="0.6"/>
+    <!-- Left Arm -->
+    <g class="arm-idle-l">
+      <rect x="13" y="55" width="17" height="38" rx="7" fill="${skin}"/>
+      <rect x="10" y="87" width="20" height="10" rx="4" fill="${bootC}"/>
+    </g>
+    <!-- Right Arm -->
+    <g class="arm-idle-r">
+      <rect x="70" y="55" width="17" height="38" rx="7" fill="${skin}"/>
+      <rect x="70" y="87" width="20" height="10" rx="4" fill="${bootC}"/>
+    </g>
+    <!-- Left Leg -->
+    <g class="leg-idle-l">
+      <rect x="30" y="92" width="17" height="42" rx="6" fill="${legC}"/>
+      <rect x="27" y="126" width="22" height="12" rx="5" fill="${bootC}"/>
+    </g>
+    <!-- Right Leg -->
+    <g class="leg-idle-r">
+      <rect x="53" y="92" width="17" height="42" rx="6" fill="${legC}"/>
+      <rect x="51" y="126" width="22" height="12" rx="5" fill="${bootC}"/>
+    </g>
+    `}
+  </g>`;
+}
+
+function renderChar(svgEl, type){
+  if(type==='warrior') drawWarrior(svgEl, false);
+  else drawNinja(svgEl, false);
+}
+
+// =====================
+//  GAME STATE
+// =====================
+let playerHP=100, enemyHP=100, level=1;
+let attacking=false, selectedChar='';
+let moveCount=0;
+
+function selectChar(el, type){
+  document.querySelectorAll('.charCard').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedChar=type;
+}
+
+function startGame(){
+  if(!selectedChar){alert('Select a character!');return;}
+  document.getElementById('home').style.display='none';
+  document.getElementById('game').style.display='block';
+
+  const enemy = selectedChar==='warrior'?'ninja':'warrior';
+  renderChar(document.getElementById('svg1'), selectedChar);
+  renderChar(document.getElementById('svg2'), enemy);
+}
+
+// =====================
+//  ANIMATION HELPERS
+// =====================
+function setAnim(el, cls, dur){
+  el.classList.remove('idle','punching','kicking','hurting','winning','losing');
+  el.classList.add(cls);
+  if(dur) setTimeout(()=>{ el.classList.remove(cls); el.classList.add('idle'); }, dur);
+}
+
+function showHit(text, color){
+  const h=document.getElementById('hitText');
+  h.textContent=text;
+  h.style.color=color||'#ff4444';
+  h.style.textShadow=`0 0 20px ${color||'#ff4444'}`;
+  h.style.opacity=1;h.style.transform='translate(-50%,-50%) scale(1.3)';
+  h.style.transition='none';
+  setTimeout(()=>{
+    h.style.transition='all 0.4s';
+    h.style.opacity=0;h.style.transform='translate(-50%,-80%) scale(0.8)';
+  },80);
+}
+
+// =====================
+//  COMBAT
+// =====================
+function attack(){
+  if(attacking||enemyHP<=0) return;
+  attacking=true;
+  moveCount++;
+  const isKick = moveCount%3===0;
+
+  const f1=document.getElementById('f1');
+  const f2=document.getElementById('f2');
+  const f2rect=f2.getBoundingClientRect();
+  const origLeft=80;
+
+  // Dash forward
+  f1.style.left=(f2rect.left - 110)+'px';
+  setAnim(f1, isKick?'kicking':'punching', 350);
+
+  setTimeout(()=>{
+    enemyHP = Math.max(0, enemyHP-20);
+    updateBars();
+    flashScreen();
+    showHit(isKick?'KICK!':'HIT!', isKick?'#ff9900':'#ff4444');
+    setAnim(f2, 'hurting', 300);
+
+    setTimeout(()=>{
+      f1.style.left=origLeft+'px';
+      setAnim(f1,'idle');
+      enemyTurn();
+      attacking=false;
+    },200);
+  },220);
+}
+
+function enemyTurn(){
+  if(enemyHP<=0){
+    setAnim(document.getElementById('f1'),'winning');
+    setAnim(document.getElementById('f2'),'losing');
+    setTimeout(()=>{ document.getElementById('menu').style.display='block'; },600);
+    return;
+  }
+
+  const f1=document.getElementById('f1');
+  const f2=document.getElementById('f2');
+  const f1rect=f1.getBoundingClientRect();
+
+  f2.style.right=(window.innerWidth - f1rect.right - 10)+'px';
+  moveCount++;
+  const isKick=moveCount%4===0;
+  setAnim(f2, isKick?'kicking':'punching', 350);
+
+  setTimeout(()=>{
+    playerHP=Math.max(0,playerHP-15);
+    updateBars();
+    flashScreen();
+    showHit(isKick?'KICK!':'OUCH!','#ffcc00');
+    setAnim(f1,'hurting',300);
+
+    setTimeout(()=>{
+      f2.style.right='80px';
+      setAnim(f2,'idle');
+
+      if(playerHP<=0){
+        setAnim(f1,'losing');
+        setAnim(f2,'winning');
+        setTimeout(()=>{ alert('YOU LOST! 💀'); resetGame(); },700);
+      }
+    },200);
+  },220);
+}
+
+function updateBars(){
+  document.getElementById('hp1bar').style.width=playerHP+'%';
+  document.getElementById('hp2bar').style.width=enemyHP+'%';
+  if(playerHP<30) document.getElementById('hp1bar').style.background='#ff1111';
+  if(enemyHP<30) document.getElementById('hp2bar').style.background='#ff1111';
+}
+
+function flashScreen(){
+  const f=document.getElementById('flash');
+  f.style.opacity=0.25;
+  setTimeout(()=>f.style.opacity=0,90);
+}
+
+function nextLevel(){
+  level++;playerHP=100;enemyHP=100;
+  updateBars();
+  document.getElementById('menu').style.display='none';
+  document.getElementById('levelBadge').textContent='LEVEL '+level;
+  document.getElementById('hp1bar').style.background='';
+  document.getElementById('hp2bar').style.background='';
+  setAnim(document.getElementById('f1'),'idle');
+  setAnim(document.getElementById('f2'),'idle');
+}
+
+function resetGame(){
+  level=1;playerHP=100;enemyHP=100;
+  updateBars();
+  document.getElementById('menu').style.display='none';
+  document.getElementById('levelBadge').textContent='LEVEL 1';
+  document.getElementById('hp1bar').style.background='';
+  document.getElementById('hp2bar').style.background='';
+  setAnim(document.getElementById('f1'),'idle');
+  setAnim(document.getElementById('f2'),'idle');
+}
+
+function goHome(){
+  document.getElementById('game').style.display='none';
+  document.getElementById('home').style.display='flex';
+  resetGame();
+}
+
+function jumpLevel(lv){
+  level=lv;playerHP=100;enemyHP=100;
+  updateBars();
+  document.getElementById('menu').style.display='none';
+  document.getElementById('levelBadge').textContent='LEVEL '+level;
+}
+
+// Click game to attack
+document.getElementById('game').addEventListener('click',function(e){
+  if(e.target.tagName==='BUTTON') return;
+  attack();
+});
+
+// Init
+document.getElementById('home').style.display='flex';
+updateBars();
+</script>
+</body>
+</html>
